@@ -1,0 +1,8 @@
+# data files
+data/*.csv
+
+# poetry
+poetry.lock
+
+# PyCharm
+.idea

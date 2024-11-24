@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "air-brain"
+version = "0.1.0"
+description = "Investigate links between air quality and mental health indicators in Allegheny County"
+authors = ["Eli <eli.goodfriend@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
