@@ -1,11 +1,12 @@
 # data files
-data/*.csv
+air_brain/data/*.csv
 
 # poetry
 poetry.lock
 
 # generated files
 notebooks/.ipynb_checkpoints
+*.pyc
 
 # PyCharm
 .idea

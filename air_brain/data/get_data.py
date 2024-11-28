@@ -22,7 +22,8 @@ DATA_SOURCES = {
     "anxiety_meds_2016": "https://data.wprdc.org/dataset/6ee6d30f-c27a-41b6-9f94-0c071ce266e4/resource/1d630832-b5d6-4cf2-b3f4-e9fffe6f1000/download/anxiety_all_2016.csv",
     "depression_meds_2015": "https://data.wprdc.org/dataset/873931dc-7c9d-4d46-890c-345891c221b4/resource/9ef39270-8a95-4069-b61f-6c40b5e45c12/download/1.depression2015.csv",
     "depression_meds_2016": "https://data.wprdc.org/dataset/873931dc-7c9d-4d46-890c-345891c221b4/resource/56fb7a63-7a97-4c23-9ffb-666651546381/download/depression_all_2016.csv",
-    # TODO too much? probably want description_short PSYCH or OVERDOSE "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
+    "arrest": "https://data.wprdc.org/datastore/dump/e03a89dd-134a-4ee8-a2bd-62c40aeebc6f",
+    # TODO too much? probably want description_short PSYCH or OVERDOSE; aggregated by quarter "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
     ## TODO covariates, especially related to poverty
 }
 
