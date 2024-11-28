@@ -16,6 +16,7 @@ DATA_SOURCES = {
     # TODO too much? 'hourly air quality': 'https://tools.wprdc.org/downstream/36fb4629-8003-4acc-a1ca-3302778a530d',
     "daily_air_quality": "https://data.wprdc.org/datastore/dump/4ab1e23f-3262-4bd3-adbf-f72f0119108b",
     "air_toxic_releases": "https://data.wprdc.org/datastore/dump/2750b8c8-246b-430f-b1e0-1aa96e00b013",
+    "air_sensors": "https://data.wprdc.org/datastore/dump/b646336a-deb4-4075-aee4-c5d28d88c426",
     ## behavioral health indicators
     "accidental_overdose": "https://data.wprdc.org/datastore/dump/1c59b26a-1684-4bfb-92f7-205b947530cf",
     "anxiety_meds_2015": "https://data.wprdc.org/dataset/6ee6d30f-c27a-41b6-9f94-0c071ce266e4/resource/d0676374-52ca-452c-9612-87b278997cfc/download/2.anxiety2015.csv",
@@ -24,6 +25,8 @@ DATA_SOURCES = {
     "depression_meds_2016": "https://data.wprdc.org/dataset/873931dc-7c9d-4d46-890c-345891c221b4/resource/56fb7a63-7a97-4c23-9ffb-666651546381/download/depression_all_2016.csv",
     "arrest": "https://data.wprdc.org/datastore/dump/e03a89dd-134a-4ee8-a2bd-62c40aeebc6f",
     # TODO too much? probably want description_short PSYCH or OVERDOSE; aggregated by quarter "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
+    ## ... anything that updates at least daily
+    "covid_deaths": "https://data.wprdc.org/datastore/dump/dd92b53c-6a90-4b83-9810-c6e8689d325c",
     ## TODO covariates, especially related to poverty
 }
 
