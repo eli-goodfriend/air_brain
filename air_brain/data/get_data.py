@@ -5,6 +5,9 @@ all data is available from the Western Pennsylvania Regional Data Center (WPRDC)
 right now, this uses links that download the whole dataset, so it takes a while
 but the WPRDC implemented their API as queryable, so this should become more sophisticated
 as I figure out what data I actually need :)
+
+TODO include download of zip code to lat-lon from
+http://download.geonames.org/export/zip/US.zip
 """
 import os
 import requests
