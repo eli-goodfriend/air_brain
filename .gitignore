@@ -4,5 +4,8 @@ data/*.csv
 # poetry
 poetry.lock
 
+# generated files
+notebooks/.ipynb_checkpoints
+
 # PyCharm
 .idea
