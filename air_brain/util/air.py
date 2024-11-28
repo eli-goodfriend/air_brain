@@ -47,7 +47,7 @@ class Air(metaclass=ABCMeta):
         # TODO verify column names, since use them later
         return df
 
-    def site_loc(self):
+    def all_site_loc(self):
         """
         Pull locations of daily air quality measurements
         For now, this uses a pre-downloaded csv to not irritate their API too much,
@@ -67,8 +67,8 @@ class Air(metaclass=ABCMeta):
         filename = os.path.join(self.data_dir, self.sensor_file)
         df = pd.read_csv(filename)
         df.drop(columns="_id", inplace=True)
-        df.rename(columns={'site_name': 'site'}, inplace=True)
-        df.enabled = df.enabled == 't'
+        df.rename(columns={"site_name": "site"}, inplace=True)
+        df.enabled = df.enabled == "t"
         # TODO verify column names, since use them later
         return df
 
@@ -99,6 +99,31 @@ class Air(metaclass=ABCMeta):
         ret = df.pivot(index="date", columns="site", values="index_value")
         return ret
 
+    def site_loc(self):
+        """
+        Subset site location data to just those sites with measurements for this parameter
+        Only interested in lat/lon right now
+        Also check that all those sites have locations
+
+        :return:
+        pandas DataFrame with columns
+        - site
+        - latitude
+        - longitude
+        """
+        df = self.all_site_loc()
+        df = df.loc[df.latitude.notna() & df.longitude.notna()]
+
+        # what sites have data for this measurement
+        # TODO this is a bit silly
+        sites = self.by_site().columns
+        # make sure that all sites have location information
+        for site in sites:
+            assert site in df.site.values, "{} has no location information".format(site)
+
+        ret = df.loc[df.site.isin(sites)][["site", "latitude", "longitude"]]
+        return ret
+
 class PM25(Air):
     """
     particulate matter of 2.5 microns or smaller
@@ -106,28 +131,40 @@ class PM25(Air):
     There are a variety of different PM 2.5 measurement recorded here
     I believe these are different ways of measuring PM 2.5, and they may not be directly comparable
     But none of them overlap at the same place at the same time, so it's tricky to check directly from the data
-    # TODO check with DHS
+    TODO check with DHS
 
-    # TODO I suspect Lawrenceville and Pittsburgh are the same site for this measurement
-    # TODO but need to confirm with DHS
+    I suspect Lawrenceville and Pittsburgh are the same site for this measurement
+    because the DHS website shows 6 active sites for PM 2.5, and one of them is Lawrenceville
+    but the Lawrenceville site in this dataset has no current data
+    and there is no location information for the Pittsburgh sensor
+    ...except that they briefly have overlap data in May/June 2021
+    I'm going to run with this assumption for now
+    TODO but need to confirm with DHS
     """
 
     def daily_air(self):
         """
-        Pull daily PM 2.5 measurements for each site
+        Subset to just PM 2.5 daily air measurements
 
         :return:
-        pandas DataFrame, indexed on date, with columns for each site
-        - Avalon
-        - Clairton
-        - Lawrenceville
-        - Liberty 2
-        - Lincoln
-        - North Braddock
-        - Parkway East
-        - Pittsburgh
+        pandas DataFrame of daily air quality measurements, with columns
+        - date : pd.datetime
+        - site : str
+        - parameter : str
+        - index_value : float
+        - description : str
+        - health_advisory : str
+        - health_effects : str
         """
         all_air = self.all_daily_air()
         pm25 = all_air.loc[all_air.parameter.isin(["PM25", "PM25(2)", "PM25B", "PM25T", "PM25_640"])].copy()
-        return pm25
 
+        # TODO verify that no sites have multiple measurements on the same day
+
+        # TODO danger need to verify with DHS that the below is true
+        # merge sites Lawrenceville and Pittsburgh -> Lawrenceville
+        # for overlap, keep Pittsburgh data, since I assume it's the more recent sensor
+        pm25 = pm25.sort_values("site")
+        pm25.loc[pm25.site == "Pittsburgh", "site"] = "Lawrenceville"
+        pm25 = pm25.drop_duplicates(subset=["date", "site"], keep="last")
+        return pm25
