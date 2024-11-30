@@ -8,7 +8,7 @@ import pandas as pd
 
 # TODO this structure is not great
 from air_brain.data.get_data import DATA_DIR
-
+from air_brain.util.loc import distance
 
 class Air(metaclass=ABCMeta):
     """
@@ -115,7 +115,7 @@ class Air(metaclass=ABCMeta):
         df = df.loc[df.latitude.notna() & df.longitude.notna()]
 
         # what sites have data for this measurement
-        # TODO this is a bit silly
+        # TODO this is a bit silly and inefficient
         sites = self.by_site().columns
         # make sure that all sites have location information
         for site in sites:
@@ -123,6 +123,37 @@ class Air(metaclass=ABCMeta):
 
         ret = df.loc[df.site.isin(sites)][["site", "latitude", "longitude"]]
         return ret
+
+    def closest_site(self, df_in):
+        """
+        Given a dataframe with columns latitude and longitude, return a dataframe with columns
+        site and dist
+
+        :param df_in:
+        :return:
+        """
+        assert 'latitude' in df_in.columns
+        assert 'longitude' in df_in.columns
+        df = df_in[['latitude', 'longitude']].copy()
+
+        site_loc_df = self.site_loc()
+
+        def apply_distance(latlon_tuple):
+            return distance(latlon_tuple[0], latlon_tuple[1],
+                            latlon_tuple[2], latlon_tuple[3])
+
+        df["min_dist"] = 10000000.
+        df["closest_site"] = ''
+        for row in site_loc_df.itertuples():
+            df["site_lat"] = row.latitude
+            df["site_lon"] = row.longitude
+            df["latlon_tuple"] = list(zip(df.site_lat, df.site_lon, df.latitude, df.longitude))
+            df["dist"] = df.latlon_tuple.apply(apply_distance)
+            df.loc[df.dist < df.min_dist, "closest_site"] = row.site
+            df.loc[df.dist < df.min_dist, "min_dist"] = df.loc[df.dist < df.min_dist, "dist"]
+
+        return df[["closest_site", "min_dist"]]
+
 
 class PM25(Air):
     """
