@@ -124,10 +124,38 @@ class Air(metaclass=ABCMeta):
         ret = df.loc[df.site.isin(sites)][["site", "latitude", "longitude"]]
         return ret
 
+    def site_distances(self, df_in):
+        """
+        Given a dataframe with columns latitude and longitude, return a dataframe with one column for each
+        measurement site, with the distance from that lat/lon to the measurement site (in miles)
+
+        :param df_in:
+        :return:
+        """
+        assert 'latitude' in df_in.columns
+        assert 'longitude' in df_in.columns
+        df = df_in[['latitude', 'longitude']].copy()
+
+        site_loc_df = self.site_loc()
+
+        def apply_distance(latlon_tuple):
+            return distance(latlon_tuple[0], latlon_tuple[1],
+                            latlon_tuple[2], latlon_tuple[3])
+
+        for row in site_loc_df.itertuples():
+            df["site_lat"] = row.latitude
+            df["site_lon"] = row.longitude
+            df["latlon_tuple"] = list(zip(df.site_lat, df.site_lon, df.latitude, df.longitude))
+            df[row.site] = df.latlon_tuple.apply(apply_distance)
+
+        return df[site_loc_df.site]
+
     def closest_site(self, df_in):
         """
         Given a dataframe with columns latitude and longitude, return a dataframe with columns
-        site and dist
+        site and dist, where
+        - site is closest measurement site
+        - dist is distance to closest measurement site
 
         :param df_in:
         :return:
@@ -143,16 +171,16 @@ class Air(metaclass=ABCMeta):
                             latlon_tuple[2], latlon_tuple[3])
 
         df["min_dist"] = 10000000.
-        df["closest_site"] = ''
+        df["site"] = ''
         for row in site_loc_df.itertuples():
             df["site_lat"] = row.latitude
             df["site_lon"] = row.longitude
             df["latlon_tuple"] = list(zip(df.site_lat, df.site_lon, df.latitude, df.longitude))
             df["dist"] = df.latlon_tuple.apply(apply_distance)
-            df.loc[df.dist < df.min_dist, "closest_site"] = row.site
+            df.loc[df.dist < df.min_dist, "site"] = row.site
             df.loc[df.dist < df.min_dist, "min_dist"] = df.loc[df.dist < df.min_dist, "dist"]
 
-        return df[["closest_site", "min_dist"]]
+        return df[["site", "min_dist"]]
 
 
 class PM25(Air):
