@@ -14,9 +14,12 @@ import requests
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DATA_SOURCES = {
+CSV_DATA_SOURCES = {
     ## air quality
     # TODO too much? 'hourly air quality': 'https://tools.wprdc.org/downstream/36fb4629-8003-4acc-a1ca-3302778a530d',
+    # note that daily air quality data is AQI (air quality index), mooshed to a scale of 0 - 500
+    # whereas the hourly air quality data is the actual measurements
+    # this seems like an important difference and may affect results
     "daily_air_quality": "https://data.wprdc.org/datastore/dump/4ab1e23f-3262-4bd3-adbf-f72f0119108b",
     "air_toxic_releases": "https://data.wprdc.org/datastore/dump/2750b8c8-246b-430f-b1e0-1aa96e00b013",
     "air_sensors": "https://data.wprdc.org/datastore/dump/b646336a-deb4-4075-aee4-c5d28d88c426",
@@ -27,18 +30,36 @@ DATA_SOURCES = {
     "depression_meds_2015": "https://data.wprdc.org/dataset/873931dc-7c9d-4d46-890c-345891c221b4/resource/9ef39270-8a95-4069-b61f-6c40b5e45c12/download/1.depression2015.csv",
     "depression_meds_2016": "https://data.wprdc.org/dataset/873931dc-7c9d-4d46-890c-345891c221b4/resource/56fb7a63-7a97-4c23-9ffb-666651546381/download/depression_all_2016.csv",
     "arrest": "https://data.wprdc.org/datastore/dump/e03a89dd-134a-4ee8-a2bd-62c40aeebc6f",
+    "police_blotter": "https://data.wprdc.org/datastore/dump/044f2016-1dfd-4ab0-bc1e-065da05fca2e", # 2016 to 2023, datetime, latlon, city of PGH only
     # TODO too much? probably want description_short PSYCH or OVERDOSE; aggregated by quarter "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
     ## ... anything that updates at least daily
     "covid_deaths": "https://data.wprdc.org/datastore/dump/dd92b53c-6a90-4b83-9810-c6e8689d325c",
     ## TODO covariates, especially related to poverty
 }
 
-def download_one(name: str, url: str):
+GEOJSON_DATA_SOURCES = {
+    ## general location data
+    # TODO pretty sure I don't need to download the sensor locations twice
+    "sensor_json": "https://data.wprdc.org/dataset/c7b3266c-adc6-41c0-b19a-8d4353bfcdaf/resource/7f7072ce-7c19-4813-a45c-6135cf4505bb/download/sourcesites.geojson",
+    "county": "https://data.wprdc.org/dataset/e80cb6b3-b31b-4ca8-a8ae-aee164608100/resource/09900a13-ab5d-4e41-94f8-7e4d129e9a4c/download/county_boundary.geojson",
+}
+
+def download_one_csv(name: str, url: str):
     response = requests.get(url)
     with open(os.path.join(DATA_DIR, "{}.csv".format(name)), "wb") as f:
         f.write(response.content)
 
+def download_one_geojson(name: str, url: str):
+    response = requests.get(url)
+    with open(os.path.join(DATA_DIR, "{}.geojson".format(name)), "wb") as f:
+        f.write(response.content)
+
 if __name__ == "__main__":
-    for name, url in DATA_SOURCES.items():
+    # TODO JANKY
+    for name, url in CSV_DATA_SOURCES.items():
         print("Downloading {}".format(name))
-        download_one(name, url)
+        download_one_csv(name, url)
+    for name, url in GEOJSON_DATA_SOURCES.items():
+        print("Downloading {}".format(name))
+        download_one_geojson(name, url)
+
