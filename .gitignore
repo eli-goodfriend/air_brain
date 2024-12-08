@@ -1,5 +1,5 @@
 # data files
-air_brain/data/*.csv
+air_brain/data/files/*
 
 # poetry
 poetry.lock
