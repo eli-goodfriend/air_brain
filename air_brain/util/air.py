@@ -5,22 +5,34 @@ from abc import ABCMeta, abstractmethod
 import os
 
 import pandas as pd
+import geopandas as gpd
 
 # TODO this structure is not great
 from air_brain.data.get_data import DATA_DIR
 from air_brain.util.loc import distance
 
-class Air(metaclass=ABCMeta):
+class DailyAir(metaclass=ABCMeta):
     """
-    abc for pulling, preprocessing, and using air quality data
+    abc for pulling, preprocessing, and using daily air quality data
+
+    daily air quality is reported as an Air Quality Index (AQI), not a mean/median daily measurement
+    this incorporates health science knowledge of how pollutants operate on the body to compute a number on a scale
+     of 0 - 500 for all pollutants
     """
     def __init__(self,
                  data_dir=DATA_DIR,
                  data_file="daily_air_quality.csv",
-                 sensor_file="air_sensors.csv"):
+                 sensor_file="sensor_json.geojson"):
         self.data_dir = data_dir
         self.data_file = data_file
         self.sensor_file = sensor_file
+
+    @property
+    @abstractmethod
+    def param_names(self):
+        """
+        list of names used for this parameter in the daily AQI file
+        """
 
     def all_daily_air(self):
         """
@@ -50,35 +62,32 @@ class Air(metaclass=ABCMeta):
     def all_site_loc(self):
         """
         Pull locations of daily air quality measurements
-        For now, this uses a pre-downloaded csv to not irritate their API too much,
+        For now, this uses a pre-downloaded geojson to not irritate their API too much,
         but could maybe just pull directly
-        Also drops unused _id column and aligns site name with site names in daily air quality
+        Also align site name with site names in daily air quality
 
         :return:
-        pandas DataFrame of air quality measurement stations, with columns
+        geopandas dataframe of air quality measurement stations, with columns
         - site : str
-        - description : str
-        - air_now_mnemonic : str
+        - Description : str
+        - AirNowMnemonic : str
         - address : str
-        - latitude : float
-        - longitude : float
-        - enabled : bool
+        - County : str
+        - Enabled : bool
+        - geometry : geopandas POINT(longitude, latitude) EPSG:4326
         """
         filename = os.path.join(self.data_dir, self.sensor_file)
-        df = pd.read_csv(filename)
-        df.drop(columns="_id", inplace=True)
-        df.rename(columns={"site_name": "site"}, inplace=True)
-        df.enabled = df.enabled == "t"
+        df = gpd.read_file(filename)
+        df.rename(columns={"SiteName": "site"}, inplace=True)
         # TODO verify column names, since use them later
         return df
 
-    @abstractmethod
     def daily_air(self):
         """
         Subset air quality data to the parameter of interest
 
         :return:
-        pandas DataFrame of daily air quality measurements, with columns
+        pandas DataFrame of daily AQI, with columns
         - date : pd.datetime
         - site : str
         - index_value : float
@@ -86,6 +95,27 @@ class Air(metaclass=ABCMeta):
         - health_advisory : str
         - health_effects : str
         """
+        all_air = self.all_daily_air()
+        return all_air.loc[all_air.parameter.isin(self.param_names)].copy()
+
+    def daily_air_gdf(self):
+        """
+        AQI for each date and site, with geopandas location for each measurement
+
+        :return:
+        geopandas dataframe of daily AQI, with columns
+        - date : pd.datetime
+        - site : str
+        - index_value : float
+        - description : str
+        - health_advisory : str
+        - health_effects : str
+        - geometry : lat/lon of measurement site
+        """
+        air_df = self.daily_air()
+        gdf = self.all_site_loc()[["site", "geometry"]]
+        df = gdf.merge(air_df, on="site", how="right", validate="1:m")
+        return df
 
     def by_site(self):
         """
@@ -112,7 +142,7 @@ class Air(metaclass=ABCMeta):
         - longitude
         """
         df = self.all_site_loc()
-        df = df.loc[df.latitude.notna() & df.longitude.notna()]
+        df = df.loc[df.geometry.notna()]
 
         # what sites have data for this measurement
         # TODO this is a bit silly and inefficient
@@ -121,71 +151,12 @@ class Air(metaclass=ABCMeta):
         for site in sites:
             assert site in df.site.values, "{} has no location information".format(site)
 
-        ret = df.loc[df.site.isin(sites)][["site", "latitude", "longitude"]]
+        ret = df.loc[df.site.isin(sites)][["site", "geometry"]]
         return ret
 
-    def site_distances(self, df_in):
-        """
-        Given a dataframe with columns latitude and longitude, return a dataframe with one column for each
-        measurement site, with the distance from that lat/lon to the measurement site (in miles)
-
-        :param df_in:
-        :return:
-        """
-        assert 'latitude' in df_in.columns
-        assert 'longitude' in df_in.columns
-        df = df_in[['latitude', 'longitude']].copy()
-
-        site_loc_df = self.site_loc()
-
-        def apply_distance(latlon_tuple):
-            return distance(latlon_tuple[0], latlon_tuple[1],
-                            latlon_tuple[2], latlon_tuple[3])
-
-        for row in site_loc_df.itertuples():
-            df["site_lat"] = row.latitude
-            df["site_lon"] = row.longitude
-            df["latlon_tuple"] = list(zip(df.site_lat, df.site_lon, df.latitude, df.longitude))
-            df[row.site] = df.latlon_tuple.apply(apply_distance)
-
-        return df[site_loc_df.site]
-
-    def closest_site(self, df_in):
-        """
-        Given a dataframe with columns latitude and longitude, return a dataframe with columns
-        site and dist, where
-        - site is closest measurement site
-        - dist is distance to closest measurement site
-
-        :param df_in:
-        :return:
-        """
-        assert 'latitude' in df_in.columns
-        assert 'longitude' in df_in.columns
-        df = df_in[['latitude', 'longitude']].copy()
-
-        site_loc_df = self.site_loc()
-
-        def apply_distance(latlon_tuple):
-            return distance(latlon_tuple[0], latlon_tuple[1],
-                            latlon_tuple[2], latlon_tuple[3])
-
-        df["min_dist"] = 10000000.
-        df["site"] = ''
-        for row in site_loc_df.itertuples():
-            df["site_lat"] = row.latitude
-            df["site_lon"] = row.longitude
-            df["latlon_tuple"] = list(zip(df.site_lat, df.site_lon, df.latitude, df.longitude))
-            df["dist"] = df.latlon_tuple.apply(apply_distance)
-            df.loc[df.dist < df.min_dist, "site"] = row.site
-            df.loc[df.dist < df.min_dist, "min_dist"] = df.loc[df.dist < df.min_dist, "dist"]
-
-        return df[["site", "min_dist"]]
-
-
-class PM25(Air):
+class PM25(DailyAir):
     """
-    particulate matter of 2.5 microns or smaller
+    daily AQI related to particulate matter of 2.5 microns or smaller
 
     There are a variety of different PM 2.5 measurement recorded here
     I believe these are different ways of measuring PM 2.5, and they may not be directly comparable
@@ -200,13 +171,14 @@ class PM25(Air):
     I'm going to run with this assumption for now
     TODO but need to confirm with DHS
     """
+    param_names = ["PM25", "PM25(2)", "PM25B", "PM25T", "PM25_640"]
 
     def daily_air(self):
         """
-        Subset to just PM 2.5 daily air measurements
+        Subset to just PM 2.5 daily AQI
 
         :return:
-        pandas DataFrame of daily air quality measurements, with columns
+        pandas DataFrame of daily AQI, with columns
         - date : pd.datetime
         - site : str
         - parameter : str
@@ -215,10 +187,7 @@ class PM25(Air):
         - health_advisory : str
         - health_effects : str
         """
-        all_air = self.all_daily_air()
-        pm25 = all_air.loc[all_air.parameter.isin(["PM25", "PM25(2)", "PM25B", "PM25T", "PM25_640"])].copy()
-
-        # TODO verify that no sites have multiple measurements on the same day
+        pm25 = super().daily_air()
 
         # TODO danger need to verify with DHS that the below is true
         # merge sites Lawrenceville and Pittsburgh -> Lawrenceville
@@ -227,3 +196,9 @@ class PM25(Air):
         pm25.loc[pm25.site == "Pittsburgh", "site"] = "Lawrenceville"
         pm25 = pm25.drop_duplicates(subset=["date", "site"], keep="last")
         return pm25
+
+class SO2(DailyAir):
+    """
+    daily AQI related to sulfur dioxide
+    """
+    param_names = ["SO2"]

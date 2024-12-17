@@ -34,6 +34,7 @@ CSV_DATA_SOURCES = {
     # TODO too much? probably want description_short PSYCH or OVERDOSE; aggregated by quarter "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
     ## ... anything that updates at least daily
     "covid_deaths": "https://data.wprdc.org/datastore/dump/dd92b53c-6a90-4b83-9810-c6e8689d325c",
+    "asthma": "https://data.wprdc.org/dataset/3bdca0be-5768-4061-a069-aa7c7121e364/resource/61022ad9-c601-4152-9ba6-da915fd05be5/download/dataset_asthma-2017.csv",
     ## TODO covariates, especially related to poverty
 }
 
