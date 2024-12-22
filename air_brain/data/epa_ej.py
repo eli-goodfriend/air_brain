@@ -35,7 +35,8 @@ class AbcEJ(metaclass=ABCMeta):
     """
     save_dir = os.path.join(DATA_DIR, "epa_ej")
     base_url = "https://gaftp.epa.gov/EJScreen"
-    id_col = "ID"
+    rename_dict = {"OZONE": "O3"}
+    subs = ["PM25", "O3"] # by default, substances available are PM 2.5 and ozone
 
     @property
     @abstractmethod
@@ -77,8 +78,20 @@ class AbcEJ(metaclass=ABCMeta):
         """
         string full path to where the usable file is saved
         by default this is the orig_file subsetted to only Allegheny County
+        with unified column names
+        - ID
+        - PM25
+        - O3
+        - area
         """
         return os.path.join(self.save_dir, "{}.csv".format(self.year))
+
+    @property
+    def tract_file(self):
+        """
+        string full path to where the census tract averaged file is saved
+        """
+        return os.path.join(self.save_dir, "{}_tract.csv".format(self.year))
 
     def download(self):
         download_url(self.url, self.zip_file)
@@ -88,16 +101,55 @@ class AbcEJ(metaclass=ABCMeta):
 
     def preprocess(self):
         """
-        by default, just want Allegheny County
+        by default, preprocess extracted full data file to
+        - unify column names
+            census block group column: ID
+            PM 2.5: PM25
+            ozone: O3
+            TODO nitrous oxide (where available): NO2
+            total area of region: area
+        - subset to Allegheny County
         """
         df = pd.read_csv(self.orig_file)
-        df = df.loc[df[self.id_col].astype(str).str.startswith('42003')]
+        # unify column names
+        df = df.rename(columns=self.rename_dict)
+        # if applicable, sum land and water area to just get area
+        if "AREALAND" in df.columns:
+            df["area"] = df.AREALAND + df.AREAWATER
+        # check that we have all the columns we need
+        for col in ["ID", "area"] + self.subs:
+            assert col in df.columns, "{} not in columns for {}".format(col, self.year)
+        # subset to Allegheny County
+        df = df.loc[df.ID.astype(str).str.startswith("42003")]
         df.to_csv(self.data_file)
+
+    def avg_by_tract(self):
+        """
+        EPA EJ data is provided averaged over census block group
+        re-average that to the census tract, weighted by area
+
+        this will subset the data to only self.subs, e.g. PM 2.5 and ozone
+        this function can be expanded to include demographic data of interest
+        """
+        df = pd.read_csv(self.data_file)
+        # overwrite the ID to be the tract number, not the block group
+        df.ID = df.ID.astype(str).str[:-1]
+        # average over tract, weighting by area, for each substance
+        agg_dict = {"area": "sum"}
+        for sub in self.subs:
+            df["{}_x_area".format(sub)] = df[sub] * df.area
+            agg_dict["{}_x_area".format(sub)] =  "sum"
+        avg_df = df.groupby("ID").agg(agg_dict).reset_index()
+        for sub in self.subs:
+            avg_df[sub] = avg_df["{}_x_area".format(sub)] / avg_df.area
+        # write out for later
+        avg_df[["ID"] + self.subs].to_csv(self.tract_file)
 
     def clean_up(self):
         """
         by default, remove larger original files
         """
+        return
         try:
             os.remove(self.zip_file)
         except FileNotFoundError:
@@ -107,7 +159,9 @@ class AbcEJ(metaclass=ABCMeta):
         except FileNotFoundError:
             pass
 
-    def get_data(self, clean_up=True):
+    def get_data(self,
+                 by_tract=True, # re-average over census tracts
+                 clean_up=True):
         """
         download, unzip, and preprocess data from EPA website, if needed
         """
@@ -125,6 +179,9 @@ class AbcEJ(metaclass=ABCMeta):
 
         self.preprocess()
 
+        if by_tract:
+            self.avg_by_tract()
+
         if clean_up:
             self.clean_up()
 
@@ -132,7 +189,9 @@ class AbcEJ(metaclass=ABCMeta):
 class EJ2015(AbcEJ):
     year = 2015
     filename = "EJSCREEN_20150505"
-    id_col = "FIPS"
+    rename_dict = {"FIPS": "ID",
+                   "pm": "PM25",
+                   "o3": "O3"}
 
 
 class EJ2016(AbcEJ):
