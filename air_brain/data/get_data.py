@@ -43,6 +43,9 @@ GEOJSON_DATA_SOURCES = {
     # TODO pretty sure I don't need to download the sensor locations twice
     "sensor_json": "https://data.wprdc.org/dataset/c7b3266c-adc6-41c0-b19a-8d4353bfcdaf/resource/7f7072ce-7c19-4813-a45c-6135cf4505bb/download/sourcesites.geojson",
     "county": "https://data.wprdc.org/dataset/e80cb6b3-b31b-4ca8-a8ae-aee164608100/resource/09900a13-ab5d-4e41-94f8-7e4d129e9a4c/download/county_boundary.geojson",
+    "zipcodes": "https://data.wprdc.org/dataset/1a5135de-cabe-4e23-b5e4-b2b8dd733817/resource/14e5de97-0a5f-4521-84f6-ba74413db598/download/alcogisallegheny-county-zip-code-boundaries.geojson",
+    "municipality": "https://data.wprdc.org/dataset/2fa577d6-1a6b-46a8-8165-27fecac1dee5/resource/b0cb0249-d1ba-45b7-9918-dc86fa8af04c/download/muni_boundaries.geojson",
+    "neighborhood": "https://data.wprdc.org/dataset/e672f13d-71c4-4a66-8f38-710e75ed80a4/resource/4af8e160-57e9-4ebf-a501-76ca1b42fc99/download/neighborhoods.geojson",
 }
 
 def download_one_csv(name: str, url: str):

@@ -13,6 +13,8 @@ from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 
+from air_brain.util.loc import bg2zip
+
 # TODO c/p
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
 # TODO higher up
@@ -93,6 +95,13 @@ class AbcEJ(metaclass=ABCMeta):
         """
         return os.path.join(self.save_dir, "{}_tract.csv".format(self.year))
 
+    @property
+    def zipcode_file(self):
+        """
+        string full path to where the zip code averaged file is saved
+        """
+        return os.path.join(self.save_dir, "{}_zipcode.csv".format(self.year))
+
     def download(self):
         download_url(self.url, self.zip_file)
 
@@ -143,7 +152,20 @@ class AbcEJ(metaclass=ABCMeta):
         for sub in self.subs:
             avg_df[sub] = avg_df["{}_x_area".format(sub)] / avg_df.area
         # write out for later
-        avg_df[["ID"] + self.subs].to_csv(self.tract_file)
+        avg_df[["ID"] + self.subs].to_csv(self.tract_file, index=False)
+
+    def avg_by_zipcode(self):
+        """
+        EPA EJ data is provided averaged over census block group
+        re-average that to the zipcode, weighted by area
+
+        this will subset the data to only self.subs, e.g. PM 2.5 and ozone
+        this function can be expanded to include demographic data of interest
+        """
+        bg_df = pd.read_csv(self.data_file)
+        df = bg2zip(bg_df, self.subs)
+        df.to_csv(self.zipcode_file, index=False)
+        return df
 
     def clean_up(self):
         """
@@ -161,6 +183,7 @@ class AbcEJ(metaclass=ABCMeta):
 
     def get_data(self,
                  by_tract=True, # re-average over census tracts
+                 by_zipcode=True, # re-average over zip codes
                  clean_up=True):
         """
         download, unzip, and preprocess data from EPA website, if needed
@@ -181,6 +204,9 @@ class AbcEJ(metaclass=ABCMeta):
 
         if by_tract:
             self.avg_by_tract()
+
+        if by_zipcode:
+            self.avg_by_zipcode()
 
         if clean_up:
             self.clean_up()
