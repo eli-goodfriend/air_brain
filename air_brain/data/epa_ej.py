@@ -37,8 +37,18 @@ class AbcEJ(metaclass=ABCMeta):
     """
     save_dir = os.path.join(DATA_DIR, "epa_ej")
     base_url = "https://gaftp.epa.gov/EJScreen"
-    rename_dict = {"OZONE": "O3"}
-    subs = ["PM25", "O3"] # by default, substances available are PM 2.5 and ozone
+    rename_dict = {"OZONE": "O3",
+                   "PTRAF": "traffic",
+                   "ACSTOTPOP": "totalpop",
+                   "LOWINCPCT": "lowincome",
+                   "MINORPCT": "poc",
+                   }
+    subs = ["PM25", "O3",
+            "traffic",
+            ]
+    demos = ["lowincome",
+             "poc",
+             ]
 
     @property
     @abstractmethod
@@ -113,10 +123,15 @@ class AbcEJ(metaclass=ABCMeta):
         by default, preprocess extracted full data file to
         - unify column names
             census block group column: ID
+
             PM 2.5: PM25
             ozone: O3
             TODO nitrous oxide (where available): NO2
+
+            lowincome: count of low income population
+
             total area of region: area
+            total population of region: totalpop
         - subset to Allegheny County
         """
         df = pd.read_csv(self.orig_file)
@@ -126,7 +141,7 @@ class AbcEJ(metaclass=ABCMeta):
         if "AREALAND" in df.columns:
             df["area"] = df.AREALAND + df.AREAWATER
         # check that we have all the columns we need
-        for col in ["ID", "area"] + self.subs:
+        for col in ["ID", "area", "totalpop"] + self.subs + self.demos:
             assert col in df.columns, "{} not in columns for {}".format(col, self.year)
         # subset to Allegheny County
         df = df.loc[df.ID.astype(str).str.startswith("42003")]
@@ -138,21 +153,29 @@ class AbcEJ(metaclass=ABCMeta):
         re-average that to the census tract, weighted by area
 
         this will subset the data to only self.subs, e.g. PM 2.5 and ozone
-        this function can be expanded to include demographic data of interest
+        and self.demos, e.g. lowincome
         """
         df = pd.read_csv(self.data_file)
         # overwrite the ID to be the tract number, not the block group
         df.ID = df.ID.astype(str).str[:-1]
         # average over tract, weighting by area, for each substance
-        agg_dict = {"area": "sum"}
+        # average over tract, weighting by population, for each demographic
+        agg_dict = {"area": "sum",
+                    "totalpop": "sum"}
         for sub in self.subs:
             df["{}_x_area".format(sub)] = df[sub] * df.area
             agg_dict["{}_x_area".format(sub)] =  "sum"
+        for demo in self.demos:
+            df["{}_x_pop".format(demo)] = df[demo] * df.totalpop
+            agg_dict["{}_x_pop".format(demo)] = "sum"
         avg_df = df.groupby("ID").agg(agg_dict).reset_index()
         for sub in self.subs:
             avg_df[sub] = avg_df["{}_x_area".format(sub)] / avg_df.area
+        for demo in self.demos:
+            avg_df[demo] = avg_df["{}_x_pop".format(demo)] / avg_df.totalpop
+            avg_df.loc[avg_df.totalpop == 0, demo] = 0
         # write out for later
-        avg_df[["ID"] + self.subs].to_csv(self.tract_file, index=False)
+        avg_df[["ID"] + self.subs + self.demos].to_csv(self.tract_file, index=False)
 
     def avg_by_zipcode(self):
         """
@@ -217,7 +240,11 @@ class EJ2015(AbcEJ):
     filename = "EJSCREEN_20150505"
     rename_dict = {"FIPS": "ID",
                    "pm": "PM25",
-                   "o3": "O3"}
+                   "o3": "O3",
+                   "traffic.score": "traffic",
+                   "pctlowinc": "lowincome",
+                   "pctmin": "poc",
+                   "pop": "totalpop"}
 
 
 class EJ2016(AbcEJ):
@@ -299,6 +326,12 @@ class EJ2022(AbcEJ):
 class EJ2023(AbcEJ):
     year = 2023
     filename = "EJSCREEN_2023_Tracts_with_AS_CNMI_GU_VI"
+    rename_dict = {"OZONE": "O3",
+                   "PTRAF": "traffic",
+                   "ACSTOTPOP": "totalpop",
+                   "LOWINCPCT": "lowincome",
+                   "PEOPCOLORPCT": "poc",
+                   }
 
     @property
     def url(self):
@@ -311,6 +344,12 @@ class EJ2023(AbcEJ):
 class EJ2024(AbcEJ):
     year = 2024
     filename = "EJScreen_2024_Tract_with_AS_CNMI_GU_VI"
+    rename_dict = {"OZONE": "O3",
+                   "PTRAF": "traffic",
+                   "ACSTOTPOP": "totalpop",
+                   "LOWINCPCT": "lowincome",
+                   "PEOPCOLORPCT": "poc",
+                   }
 
     @property
     def url(self):
