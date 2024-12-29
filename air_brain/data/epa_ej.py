@@ -39,12 +39,13 @@ class AbcEJ(metaclass=ABCMeta):
     base_url = "https://gaftp.epa.gov/EJScreen"
     rename_dict = {"OZONE": "O3",
                    "PTRAF": "traffic",
+                   "DSLPM": "dpm",
                    "ACSTOTPOP": "totalpop",
                    "LOWINCPCT": "lowincome",
                    "MINORPCT": "poc",
                    }
     subs = ["PM25", "O3",
-            "traffic",
+            "traffic", "dpm",
             ]
     demos = ["lowincome",
              "poc",
@@ -154,6 +155,7 @@ class AbcEJ(metaclass=ABCMeta):
 
         this will subset the data to only self.subs, e.g. PM 2.5 and ozone
         and self.demos, e.g. lowincome
+        we can include demos here because census block groups are subsets of census tracts
         """
         df = pd.read_csv(self.data_file)
         # overwrite the ID to be the tract number, not the block group
@@ -183,7 +185,7 @@ class AbcEJ(metaclass=ABCMeta):
         re-average that to the zipcode, weighted by area
 
         this will subset the data to only self.subs, e.g. PM 2.5 and ozone
-        this function can be expanded to include demographic data of interest
+        it doesn't make sense to average demographics by area, so I won't do it
         """
         bg_df = pd.read_csv(self.data_file)
         df = bg2zip(bg_df, self.subs)
@@ -328,6 +330,7 @@ class EJ2023(AbcEJ):
     filename = "EJSCREEN_2023_Tracts_with_AS_CNMI_GU_VI"
     rename_dict = {"OZONE": "O3",
                    "PTRAF": "traffic",
+                   "DSLPM": "dpm",
                    "ACSTOTPOP": "totalpop",
                    "LOWINCPCT": "lowincome",
                    "PEOPCOLORPCT": "poc",
@@ -346,6 +349,7 @@ class EJ2024(AbcEJ):
     filename = "EJScreen_2024_Tract_with_AS_CNMI_GU_VI"
     rename_dict = {"OZONE": "O3",
                    "PTRAF": "traffic",
+                   "DSLPM": "dpm",
                    "ACSTOTPOP": "totalpop",
                    "LOWINCPCT": "lowincome",
                    "PEOPCOLORPCT": "poc",
