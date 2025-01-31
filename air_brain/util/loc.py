@@ -9,15 +9,15 @@ from math import cos, asin, sqrt, pi
 import pandas as pd
 import geopandas as gpd
 
-from air_brain.data.get_data import DATA_DIR
+from air_brain.config import data_dir
 
 # canonical CRS for this project
 # TODO... is this the best one?
 CRS = "EPSG:2272"
 
 # geometry files
-BG_FILE = os.path.join(DATA_DIR, "tl_2010_42003_bg10", "tl_2010_42003_bg10.shp")
-ZIP_FILE = os.path.join(DATA_DIR, "zipcodes.geojson")
+BG_FILE = os.path.join(data_dir, "tl_2010_42003_bg10", "tl_2010_42003_bg10.shp")
+ZIP_FILE = os.path.join(data_dir, "zipcodes.geojson")
 
 def zip_by_bg():
     """

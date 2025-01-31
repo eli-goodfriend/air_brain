@@ -7,23 +7,14 @@ currently this is available for 2015 - 2024
 """
 import os
 import shutil
-import requests
 
 from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 
+from air_brain.config import data_dir
+from air_brain.data.util import download_url
 from air_brain.util.loc import bg2zip
-
-# TODO c/p
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
-# TODO higher up
-def download_url(url, save_path, chunk_size=128):
-    r = requests.get(url, stream=True, verify=False)
-    with open(save_path, "wb") as fd:
-        for chunk in r.iter_content(chunk_size=chunk_size):
-            fd.write(chunk)
-
 
 class AbcEJ(metaclass=ABCMeta):
     """
@@ -35,7 +26,7 @@ class AbcEJ(metaclass=ABCMeta):
         - zip code (overdose deaths)
         - neighborhood (COVID)
     """
-    save_dir = os.path.join(DATA_DIR, "epa_ej")
+    save_dir = os.path.join(data_dir, "epa_ej")
     base_url = "https://gaftp.epa.gov/EJScreen"
     rename_dict = {"OZONE": "O3",
                    "PTRAF": "traffic",
@@ -114,7 +105,7 @@ class AbcEJ(metaclass=ABCMeta):
         return os.path.join(self.save_dir, "{}_zipcode.csv".format(self.year))
 
     def download(self):
-        download_url(self.url, self.zip_file)
+        download_url(self.url, self.zip_file, verify=False)
 
     def extract(self):
         shutil.unpack_archive(self.zip_file, self.save_dir)
@@ -194,9 +185,8 @@ class AbcEJ(metaclass=ABCMeta):
 
     def clean_up(self):
         """
-        by default, remove larger original files
+        optionally, remove larger original files
         """
-        return
         try:
             os.remove(self.zip_file)
         except FileNotFoundError:
@@ -209,12 +199,12 @@ class AbcEJ(metaclass=ABCMeta):
     def get_data(self,
                  by_tract=True, # re-average over census tracts
                  by_zipcode=True, # re-average over zip codes
-                 clean_up=True):
+                 clean_up=False):
         """
         download, unzip, and preprocess data from EPA website, if needed
         """
         if os.path.exists(self.data_file):
-            print("Skipping {}, already downloaded".format(self.year))
+            print("Skipping {} EPA EJ data, already downloaded".format(self.year))
             return
 
         if (not os.path.exists(self.zip_file)) & (not os.path.exists(self.orig_file)):
@@ -367,17 +357,8 @@ def get_all():
     """
     utility to download all EPA EJ data
     """
-    EJ2015().get_data()
-    EJ2016().get_data()
-    EJ2017().get_data()
-    EJ2018().get_data()
-    EJ2019().get_data()
-    EJ2020().get_data()
-    EJ2021().get_data()
-    EJ2022().get_data()
-    EJ2023().get_data()
-    EJ2024().get_data()
-
+    for klass in [EJ2015, EJ2016, EJ2017, EJ2018, EJ2019, EJ2020, EJ2021, EJ2022, EJ2023, EJ2024]:
+        klass().get_data()
 
 if __name__ == "__main__":
     get_all()

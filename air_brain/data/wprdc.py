@@ -1,25 +1,23 @@
 """
-script for downloading data sources used in this project
-all data is available from the Western Pennsylvania Regional Data Center (WPRDC)
+links for downloading data from Western Pennsylvania Regional Data Center (WPRDC)
 
 right now, this uses links that download the whole dataset, so it takes a while
-but the WPRDC implemented their API as queryable, so this should become more sophisticated
-as I figure out what data I actually need :)
+but the WPRDC implemented their API as queryable, so this could become more sophisticated
+as I figure out what data I actually need
 
-TODO include download of zip code to lat-lon from
+TODO elsewhere include download of zip code to lat-lon from
 http://download.geonames.org/export/zip/US.zip
 """
 import os
 import requests
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
+from air_brain.config import data_dir
 
-CSV_DATA_SOURCES = {
+csv_data = {
     ## air quality
-    # TODO too much? 'hourly air quality': 'https://tools.wprdc.org/downstream/36fb4629-8003-4acc-a1ca-3302778a530d',
-    # note that daily air quality data is AQI (air quality index), mooshed to a scale of 0 - 500
+    "hourly air quality": "https://tools.wprdc.org/downstream/36fb4629-8003-4acc-a1ca-3302778a530d",
+    # note that daily air quality data is AQI (air quality index), aligned to a scale of 0 - 500
     # whereas the hourly air quality data is the actual measurements
-    # this seems like an important difference and may affect results
     "daily_air_quality": "https://data.wprdc.org/datastore/dump/4ab1e23f-3262-4bd3-adbf-f72f0119108b",
     "air_toxic_releases": "https://data.wprdc.org/datastore/dump/2750b8c8-246b-430f-b1e0-1aa96e00b013",
     "air_sensors": "https://data.wprdc.org/datastore/dump/b646336a-deb4-4075-aee4-c5d28d88c426",
@@ -32,39 +30,35 @@ CSV_DATA_SOURCES = {
     "arrest": "https://data.wprdc.org/datastore/dump/e03a89dd-134a-4ee8-a2bd-62c40aeebc6f",
     "police_blotter": "https://data.wprdc.org/datastore/dump/044f2016-1dfd-4ab0-bc1e-065da05fca2e", # 2016 to 2023, datetime, latlon, city of PGH only
     "ems": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418", # 2015 to present, time by quarter, location by census block group
-    # TODO too much? probably want description_short PSYCH or OVERDOSE; aggregated by quarter "ems_dispatch": "https://tools.wprdc.org/downstream/ff33ca18-2e0c-4cb5-bdcd-60a5dc3c0418",
-    ## ... anything that updates at least daily
+    ## respiratory health
     "covid_deaths": "https://data.wprdc.org/datastore/dump/dd92b53c-6a90-4b83-9810-c6e8689d325c",
     "asthma": "https://data.wprdc.org/dataset/3bdca0be-5768-4061-a069-aa7c7121e364/resource/61022ad9-c601-4152-9ba6-da915fd05be5/download/dataset_asthma-2017.csv",
     ## TODO covariates, especially related to poverty
 }
 
-GEOJSON_DATA_SOURCES = {
+geojson_data = {
     ## general location data
-    # TODO pretty sure I don't need to download the sensor locations twice
-    "sensor_json": "https://data.wprdc.org/dataset/c7b3266c-adc6-41c0-b19a-8d4353bfcdaf/resource/7f7072ce-7c19-4813-a45c-6135cf4505bb/download/sourcesites.geojson",
     "county": "https://data.wprdc.org/dataset/e80cb6b3-b31b-4ca8-a8ae-aee164608100/resource/09900a13-ab5d-4e41-94f8-7e4d129e9a4c/download/county_boundary.geojson",
     "zipcodes": "https://data.wprdc.org/dataset/1a5135de-cabe-4e23-b5e4-b2b8dd733817/resource/14e5de97-0a5f-4521-84f6-ba74413db598/download/alcogisallegheny-county-zip-code-boundaries.geojson",
     "municipality": "https://data.wprdc.org/dataset/2fa577d6-1a6b-46a8-8165-27fecac1dee5/resource/b0cb0249-d1ba-45b7-9918-dc86fa8af04c/download/muni_boundaries.geojson",
     "neighborhood": "https://data.wprdc.org/dataset/e672f13d-71c4-4a66-8f38-710e75ed80a4/resource/4af8e160-57e9-4ebf-a501-76ca1b42fc99/download/neighborhoods.geojson",
+    ## air quality sensor locations
+    # TODO also included in csv_data, probably only need one
+    "sensor_json": "https://data.wprdc.org/dataset/c7b3266c-adc6-41c0-b19a-8d4353bfcdaf/resource/7f7072ce-7c19-4813-a45c-6135cf4505bb/download/sourcesites.geojson",
 }
 
-def download_one_csv(name: str, url: str):
+def download_csv(name: str):
+    url = csv_data[name]
+    fileout = os.path.join(data_dir, "{}.csv".format(name))
+    print("Downloading {} from WPRDC to {}".format(name, fileout))
     response = requests.get(url)
-    with open(os.path.join(DATA_DIR, "{}.csv".format(name)), "wb") as f:
+    with open(fileout, "wb") as f:
         f.write(response.content)
 
-def download_one_geojson(name: str, url: str):
+def download_geojson(name: str):
+    url = geojson_data[name]
+    fileout = os.path.join(data_dir, "{}.geojson".format(name))
+    print("Downloading {} from WPRDC to {}".format(name, fileout))
     response = requests.get(url)
-    with open(os.path.join(DATA_DIR, "{}.geojson".format(name)), "wb") as f:
+    with open(fileout, "wb") as f:
         f.write(response.content)
-
-if __name__ == "__main__":
-    # TODO JANKY
-    for name, url in CSV_DATA_SOURCES.items():
-        print("Downloading {}".format(name))
-        download_one_csv(name, url)
-    for name, url in GEOJSON_DATA_SOURCES.items():
-        print("Downloading {}".format(name))
-        download_one_geojson(name, url)
-
