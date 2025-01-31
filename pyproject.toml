@@ -17,6 +17,7 @@ ipympl = "^0.9.4"
 pykrige = "^1.7.2"
 libpysal = "^4.12.1"
 esda = "^2.6.0"
+spreg = "^1.8.1"
 
 
 [build-system]
