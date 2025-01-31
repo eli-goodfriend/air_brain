@@ -1,7 +1,9 @@
 """
 utility to download all data required in notebooks
-
 in the future, may want to split this into multiple scripts
+
+the data needed for active (not archived) notebooks is checked into the repo,
+but this is how that data was downloaded/preprocessed
 """
 import air_brain.data.wprdc as wprdc
 import air_brain.data.epa_ej as epa_ej
