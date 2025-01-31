@@ -1,8 +1,12 @@
 # data files
-data/*.csv
+data/*
 
 # poetry
 poetry.lock
+
+# generated files
+notebooks/.ipynb_checkpoints
+*.pyc
 
 # PyCharm
 .idea
