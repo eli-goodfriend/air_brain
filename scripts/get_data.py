@@ -12,7 +12,8 @@ def get_wprdc():
     wprdc.download_csv("asthma")
 
 def get_epa_ej():
-    # air pollution and demographics by census block group for 2017
+    # air pollution and demographics by census block group for 2017,
+    # averaged to census tract
     epa_ej.EJ2017().get_data()
 
 def get_census():
