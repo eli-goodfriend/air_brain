@@ -29,7 +29,7 @@ def p_col_style(styler):
 
 # model fit result(s) -> dataframe of results
 
-def ols2df(ols_res):
+def ols2df(ols_res, rm_intercept=True):
     """
     utility to generate a dataframe of results from a dict of sm.OLS model fit outputs
 
@@ -42,6 +42,10 @@ def ols2df(ols_res):
         res_df["dep_var"] = col
         dfs.append(res_df)
     df = pd.concat(dfs)
+
+    # optionally, remove intercept information for a clearer table
+    if rm_intercept:
+        df = df.loc[df.index != "intercept"]
 
     # reset index
     df.reset_index(inplace=True, names="indep_var")
