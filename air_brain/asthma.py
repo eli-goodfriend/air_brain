@@ -4,6 +4,7 @@ utilities for the air quality vs asthma analysis
 import geopandas as gpd
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 from air_brain.config import data_dir
 
@@ -37,10 +38,11 @@ def build_dataset():
     df["intercept"] = 1
 
     # generate combined air quality and demographic variables
-    # for more details on why these are needed, see the notebooks
+    # for more details on why these are needed, see the Appendix notebook
     df[["PM25_scale", "dpm_scale"]] = StandardScaler().fit_transform(df[["PM25", "dpm"]])
-    df["PM25_dpm_max"] = df[["PM25_scale", "dpm_scale"]].max(axis=1)
-    # PoC and lowincome are naturally on the same scale, so don't need to re-scale
-    df["poc_lowincome_max"] = df[["poc", "lowincome"]].max(axis=1)
+    df["PM25_dpm_mean"] = df[["PM25_scale", "dpm_scale"]].mean(axis=1)
+    pca_demo = PCA(n_components=1)
+    pca_demo.fit(df[["lowincome", "poc"]])
+    df["poc_lowincome_pca"] = pca_demo.transform(df[["lowincome", "poc"]])
 
     return df
