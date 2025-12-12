@@ -10,24 +10,14 @@ from air_brain.config import data_dir
 
 def build_dataset():
     # census tract geometry
-    tracts = gpd.read_file(data_dir / "tract_2010" / "tl_2010_42003_tract10.shp")
+    tracts = gpd.read_file(data_dir / "raw" / "tract_2010" / "tl_2010_42003_tract10.shp")
     tracts.GEOID10 = tracts.GEOID10.astype(int)
 
     # import the childhood asthma healthcare utilization data
-    asthma = pd.read_csv(data_dir / "asthma.csv")
-    # ED hospitalizations should be a subset of ED visits
-    # so if ED_visits < ED_hosp, set ED_visits to ED_hosp
-    asthma.loc[asthma.ED_visits < asthma.ED_hosp, "ED_visits"] = asthma.loc[
-        asthma.ED_visits < asthma.ED_hosp, "ED_hosp"]
-    # convert all counts to fractions of potential patients
-    # if no members in census tract, fill with 0
-    for col in ["Asthma_use", "UC_visits", "ED_visits", "ED_hosp"]:
-        asthma["{}_frac".format(col)] = (asthma[col] / asthma.Total_members).fillna(0)
-    # too little data, remove
-    asthma = asthma.loc[asthma.Total_members > 4]
+    asthma = pd.read_csv(data_dir / "preprocessed" / "asthma.csv")
 
     # import the EPA's air quality and demographic data
-    aq = pd.read_csv(data_dir / "epa_ej" / "2017_tract.csv")
+    aq = pd.read_csv(data_dir / "raw" / "epa_ej" / "2017_tract.csv")
 
     # merge asthma data with air quality / demographic data
     df = asthma.merge(aq, left_on="Census_tract", right_on="ID", how="left", validate="1:1")
