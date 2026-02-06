@@ -6,6 +6,7 @@ poetry.lock
 
 # generated files
 notebooks/.ipynb_checkpoints
+notebooks/archive/.ipynb_checkpoints
 *.pyc
 
 # PyCharm

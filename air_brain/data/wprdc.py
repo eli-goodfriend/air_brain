@@ -3,12 +3,10 @@ links for downloading data from Western Pennsylvania Regional Data Center (WPRDC
 
 right now, this uses links that download the whole dataset, so it takes a while
 but the WPRDC implemented their API as queryable, so this could become more sophisticated
-as I figure out what data I actually need
 
 TODO elsewhere include download of zip code to lat-lon from
 http://download.geonames.org/export/zip/US.zip
 """
-import os
 import requests
 
 from air_brain.config import data_dir
@@ -49,7 +47,7 @@ geojson_data = {
 
 def download_csv(name: str):
     url = csv_data[name]
-    fileout = os.path.join(data_dir, "{}.csv".format(name))
+    fileout = data_dir / "raw" / "{}.csv".format(name)
     print("Downloading {} from WPRDC to {}".format(name, fileout))
     response = requests.get(url)
     with open(fileout, "wb") as f:
@@ -57,7 +55,7 @@ def download_csv(name: str):
 
 def download_geojson(name: str):
     url = geojson_data[name]
-    fileout = os.path.join(data_dir, "{}.geojson".format(name))
+    fileout = data_dir / "raw" / "{}.geojson".format(name)
     print("Downloading {} from WPRDC to {}".format(name, fileout))
     response = requests.get(url)
     with open(fileout, "wb") as f:

@@ -18,6 +18,8 @@ pykrige = "^1.7.2"
 libpysal = "^4.12.1"
 esda = "^2.6.0"
 spreg = "^1.8.1"
+seaborn = "^0.13.2"
+jupyter = "^1.1.1"
 
 
 [build-system]

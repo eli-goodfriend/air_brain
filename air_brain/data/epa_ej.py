@@ -26,7 +26,8 @@ class AbcEJ(metaclass=ABCMeta):
         - zip code (overdose deaths)
         - neighborhood (COVID)
     """
-    save_dir = os.path.join(data_dir, "epa_ej")
+    raw_dir = data_dir / "raw" / "epa_ej"
+    preproc_dir = data_dir / "preprocessed" / "epa_ej"
     base_url = "https://gaftp.epa.gov/EJScreen"
     rename_dict = {"OZONE": "O3",
                    "PTRAF": "traffic",
@@ -68,14 +69,14 @@ class AbcEJ(metaclass=ABCMeta):
         """
         string full path to where the zip file should be downloaded
         """
-        return os.path.join(self.save_dir, "{}.csv.zip".format(self.filename))
+        return self.raw_dir / "{}.csv.zip".format(self.filename)
 
     @property
     def orig_file(self):
         """
         string full path to where the unzipped file should be saved
         """
-        return os.path.join(self.save_dir, "{}.csv".format(self.filename))
+        return self.raw_dir / "{}.csv".format(self.filename)
 
     @property
     def data_file(self):
@@ -88,27 +89,27 @@ class AbcEJ(metaclass=ABCMeta):
         - O3
         - area
         """
-        return os.path.join(self.save_dir, "{}.csv".format(self.year))
+        return self.preproc_dir / "{}.csv".format(self.year)
 
     @property
     def tract_file(self):
         """
         string full path to where the census tract averaged file is saved
         """
-        return os.path.join(self.save_dir, "{}_tract.csv".format(self.year))
+        return self.preproc_dir / "{}_tract.csv".format(self.year)
 
     @property
     def zipcode_file(self):
         """
         string full path to where the zip code averaged file is saved
         """
-        return os.path.join(self.save_dir, "{}_zipcode.csv".format(self.year))
+        return self.preproc_dir / "{}_zipcode.csv".format(self.year)
 
     def download(self):
         download_url(self.url, self.zip_file, verify=False)
 
     def extract(self):
-        shutil.unpack_archive(self.zip_file, self.save_dir)
+        shutil.unpack_archive(self.zip_file, self.raw_dir)
 
     def preprocess(self):
         """
@@ -255,7 +256,7 @@ class EJ2016(AbcEJ):
         """
         string full path to where the unzipped file should be saved
         """
-        return os.path.join(self.save_dir, "EJSCREEN_Full_V3_USPR_TSDFupdate.csv")
+        return self.raw_dir / "EJSCREEN_Full_V3_USPR_TSDFupdate.csv"
 
 
 class EJ2017(AbcEJ):
@@ -274,7 +275,7 @@ class EJ2017(AbcEJ):
         """
         downloads as csv, not zip
         """
-        return os.path.join(self.save_dir, "{}.csv".format(self.filename))
+        return self.raw_dir / "{}.csv".format(self.filename)
 
     def extract(self):
         pass
@@ -295,7 +296,7 @@ class EJ2018(AbcEJ):
         """
         string full path to where the unzipped file should be saved
         """
-        return os.path.join(self.save_dir, "EJSCREEN_Full_USPR_2018.csv")
+        return self.raw_dir / "EJSCREEN_Full_USPR_2018.csv"
 
 
 class EJ2019(AbcEJ):
