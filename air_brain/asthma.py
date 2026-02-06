@@ -17,7 +17,7 @@ def build_dataset():
     asthma = pd.read_csv(data_dir / "preprocessed" / "asthma.csv")
 
     # import the EPA's air quality and demographic data
-    aq = pd.read_csv(data_dir / "raw" / "epa_ej" / "2017_tract.csv")
+    aq = pd.read_csv(data_dir / "preprocessed" / "epa_ej" / "2017_tract.csv")
 
     # merge asthma data with air quality / demographic data
     df = asthma.merge(aq, left_on="Census_tract", right_on="ID", how="left", validate="1:1")
