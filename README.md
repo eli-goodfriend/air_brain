@@ -6,14 +6,17 @@ Allegheny County, Pennsylvania, is my home. This region is remarkable for many r
 
 I started this project to see what (if any) links between air quality and health outcomes were observable in public data. 
 
-### (Work in progress) Childhood asthma
+### Childhood asthma
 
 There is a well understood link between air pollution and childhood asthma. For example:
 - [2024 study linking early exposure to PM 2.5 and NO2 with later onset asthma](https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2815586)
 - [Long term PM 2.5 exposure associated with asthma prevalence](https://www.nature.com/articles/s41390-023-02977-5)
 - [Meta-analyses of air pollution vs asthma](https://pmc.ncbi.nlm.nih.gov/articles/PMC7503605/)
 
-In [this notebook](notebooks/WIP%20Asthma%20vs%20PM25.ipynb), I look at the relationship between childhood asthma-related medical encounters and PM 2.5 during 2017.
+In [this notebook](notebooks/1.%20Asthma%20vs%20PM25.ipynb), I look at the relationship between childhood 
+asthma-related medical encounters and PM 2.5 during 2017, controlling for both demographics and
+spatial relationships. I was surprised to find that, in this dataset, demographics are more predictive of
+childhood asthma outcomes than air quality.
 
 ### (Future work) Behavioral health
 
